@@ -3,8 +3,6 @@ pragma solidity >=0.8.19;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract Escrow {
     using SafeERC20 for IERC20;
@@ -18,7 +16,7 @@ contract Escrow {
     }
 
     uint256 private constant THREE_DAYS = 3 days;
-    mapping(address recipient => TimeLock[]) private _withdrawables;
+    mapping(address recipient => TimeLock[] tls) private _withdrawables;
 
     function enterEscrow(address seller_, IERC20 token_, uint256 amount_) external returns (uint256 id) {
         token_.safeTransferFrom(msg.sender, address(this), amount_);

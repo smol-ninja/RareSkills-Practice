@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.19;
 
-import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
+import { Test } from "forge-std/Test.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC777 } from "@openzeppelin/contracts/token/ERC777/ERC777.sol";
 
 import { BojackToken, TokenSaleManager } from "../../src/week-1/BondingCurve.sol";
 import { ERC1363 } from "./utils/ERC1363.sol";
-
-contract ERC1363Token is ERC1363 {
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) { }
-}
 
 contract TokenSaleManagerTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -23,7 +18,7 @@ contract TokenSaleManagerTest is Test {
     // setting up test token
     IERC20 private testToken = new ERC20("Test Token", "TT");
     ERC777 private token777 = new ERC777("Test Token777", "TT777", new address[](0));
-    ERC1363Token private token1363 = new ERC1363Token("Test Token1363", "TT1363");
+    ERC1363 private token1363 = new ERC1363("Test Token1363", "TT1363");
 
     // setting up test users
     address private testUser = address(0x1234);

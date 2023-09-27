@@ -14,7 +14,9 @@ import { IERC1363Spender } from "@openzeppelin/contracts/interfaces/IERC1363Spen
  * @title ERC1363
  * @dev Implementation of an ERC1363 interface.
  */
-abstract contract ERC1363 is ERC20, IERC1363, ERC165 {
+contract ERC1363 is ERC20, IERC1363, ERC165 {
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) { }
+
     /**
      * @dev See {IERC165-supportsInterface}.
      */

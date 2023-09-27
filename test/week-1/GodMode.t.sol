@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.19;
 
-import "forge-std/Test.sol";
-import "forge-std/Vm.sol";
+import { Test } from "forge-std/Test.sol";
 
 import { GodMode } from "../../src/week-1/GodMode.sol";
 

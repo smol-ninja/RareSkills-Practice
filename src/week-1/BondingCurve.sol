@@ -145,9 +145,9 @@ contract TokenSaleManager {
         uint256 tokensOutValue = Math.average(newPrice.mul(amount), curPrice.mul(amount));
         uint256 tokensOut = tokensOutValue.div(getOraclePrice(tokenToWithdraw));
 
-        IERC20(tokenToWithdraw).transfer(msg.sender, tokensOut);
-
         _currentPrice = newPrice;
         _token.burn(msg.sender, amount);
+
+        IERC20(tokenToWithdraw).transfer(msg.sender, tokensOut);
     }
 }
