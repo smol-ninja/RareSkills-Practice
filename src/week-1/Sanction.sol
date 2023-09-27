@@ -8,6 +8,7 @@ contract Sanction is ERC20, Ownable {
     // @dev map to store sanctioned addresses
     mapping(address owner => bool status) private _sanctioned;
 
+    // @dev gas efficient over `require`
     error AddressIsSanctioned(address);
 
     constructor() ERC20("Token with Sanctions", "SNCT") Ownable() { }
@@ -24,6 +25,8 @@ contract Sanction is ERC20, Ownable {
         return _sanctioned[owner_];
     }
 
+    // @dev ERC20 hook that is called before any transfer of tokens
+    // @revert if either `to` or `from` is sanctioned
     function _beforeTokenTransfer(address from, address to, uint256) internal view override {
         if (_sanctioned[from]) {
             revert AddressIsSanctioned(from);

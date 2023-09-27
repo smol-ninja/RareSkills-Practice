@@ -6,8 +6,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract GodMode is ERC20 {
     address private immutable _god;
 
-    error CallerNotGod();
-
+    // @param god_ the special address that can move token between two any addresses
     constructor(address god_) ERC20("Token with God mode", "GODT") {
         _god = god_;
     }
@@ -17,6 +16,7 @@ contract GodMode is ERC20 {
         _;
     }
 
+    // @notice a function to transfer tokens between addresses by the special address
     function transferByGod(address from, address to, uint256 amount) external onlyGod {
         _transfer(from, to, amount);
     }

@@ -12,6 +12,8 @@ import { ERC1363 } from "./utils/ERC1363.sol";
 contract TokenSaleManagerTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
+    error InsufficientBalance(address erc20);
+
     TokenSaleManager private manager;
     BojackToken private bojackToken;
 
@@ -143,7 +145,7 @@ contract TokenSaleManagerTest is Test {
         assertEq(manager.getCurrentPrice(), 14);
     }
 
-    function test_sell() public whenInitialPriceIsNotZero {
+    function test_Sell() public whenInitialPriceIsNotZero {
         uint256 prevSupply = IERC20(bojackToken).totalSupply();
 
         vm.startPrank(testUser);
@@ -161,5 +163,13 @@ contract TokenSaleManagerTest is Test {
 
         // check current price of the BojackToken
         assertEq(manager.getCurrentPrice(), 2);
+    }
+
+    function test_Sell_RevertWhenRandomERC20() public whenInitialPriceIsNotZero {
+        IERC20 randomToken = new ERC20("Random Token", "RT");
+
+        vm.expectRevert(abi.encodeWithSelector(InsufficientBalance.selector, address(randomToken)));
+        vm.prank(testUser);
+        manager.sell(100e18, address(randomToken));
     }
 }
