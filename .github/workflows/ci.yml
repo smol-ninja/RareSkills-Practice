@@ -2,6 +2,8 @@ name: "CI"
 
 env:
   API_KEY_ALCHEMY: ${{ secrets.API_KEY_ALCHEMY }}
+  API_KEY_INFURA: ${{ secrets.API_KEY_INFURA }}
+  API_KEY_ETHERSCAN: ${{ secrets.API_KEY_ETHERSCAN }}
   FOUNDRY_PROFILE: "ci"
 
 on:
@@ -86,7 +88,7 @@ jobs:
           )" >> $GITHUB_ENV
 
       - name: "Run the tests"
-        run: "forge test"
+        run: "forge test --fork-url https://mainnet.infura.io/v3/$API_KEY_INFURA"
 
       - name: "Add test summary"
         run: |
