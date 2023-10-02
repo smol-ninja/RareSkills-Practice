@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity 0.8.19;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -14,11 +14,11 @@ contract Escrow {
     // @timestamp when buyer deposits. Requires to keep track of cool down period for seller
     struct TimeLock {
         IERC20 token;
+        uint64 timestamp;
         uint256 amount;
-        uint256 timestamp;
     }
 
-    uint256 private constant THREE_DAYS = 3 days;
+    uint64 private constant THREE_DAYS = 3 days;
 
     // @dev size of TimeLock array is always increasing
     mapping(address recipient => TimeLock[] tls) private _withdrawables;
@@ -35,10 +35,12 @@ contract Escrow {
         TimeLock memory tl;
         tl.token = token_;
         tl.amount = amount_;
-        tl.timestamp = block.timestamp;
+        tl.timestamp = uint64(block.timestamp);
         _withdrawables[seller_].push(tl);
 
-        id = _withdrawables[seller_].length - 1;
+        unchecked {
+            id = _withdrawables[seller_].length - 1;
+        }
 
         emit NewDeposit(seller_, id);
     }
@@ -47,7 +49,13 @@ contract Escrow {
     // @revert if 3 days have not been passed
     function settleForId(uint256 id_) external {
         TimeLock memory tl = _withdrawables[msg.sender][id_];
-        require(block.timestamp >= tl.timestamp + THREE_DAYS, "cant withdraw");
+        uint64 delay;
+        unchecked {
+            delay = tl.timestamp + THREE_DAYS;
+        }
+
+        require(block.timestamp >= delay, "cant withdraw");
+        require(tl.amount > 0, "0 amount");
 
         // sets amount to 0 to prevent double spends
         _withdrawables[msg.sender][id_].amount = 0;
@@ -57,17 +65,21 @@ contract Escrow {
 
     // @notice scan and withdraw for all available IDs for a msg.sender
     // @dev this function ignores IDs for which either amount is 0 or 3 days have not been passed.
-    function settleForAllIds() external {
+    function settleForIds(uint256[] calldata ids_) external {
         TimeLock[] memory tls = _withdrawables[msg.sender];
-
-        uint256 len = tls.length;
+        uint256 len = ids_.length;
+        uint64 delay;
 
         // loop over all IDs
-        for (uint256 i; i < len; i++) {
-            if (block.timestamp >= tls[i].timestamp + THREE_DAYS && tls[i].amount > 0) {
+        for (uint256 i; i < len; ++i) {
+            unchecked {
+                delay = tls[ids_[i]].timestamp + THREE_DAYS;
+            }
+
+            if (block.timestamp >= delay && tls[ids_[i]].amount > 0) {
                 // sets amount to 0 to prevent double spends
-                _withdrawables[msg.sender][i].amount = 0;
-                tls[i].token.safeTransfer(msg.sender, tls[i].amount);
+                _withdrawables[msg.sender][ids_[i]].amount = 0;
+                tls[ids_[i]].token.safeTransfer(msg.sender, tls[ids_[i]].amount);
             }
         }
     }

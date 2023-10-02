@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity 0.8.19;
 
 import { Test } from "forge-std/Test.sol";
 
@@ -10,6 +10,8 @@ contract SanctionTest is Test {
     address private testUser;
 
     error AddressIsSanctioned(address);
+
+    event SanctionStatus(address indexed, bool);
 
     function setUp() public {
         token = new Sanction();
@@ -25,6 +27,8 @@ contract SanctionTest is Test {
     }
 
     function test_AddSanction() public {
+        vm.expectEmit(true, false, false, true);
+        emit SanctionStatus(testUser, true);
         token.addSanction(testUser);
         assertEq(token.hasSanction(testUser), true);
     }
@@ -35,6 +39,8 @@ contract SanctionTest is Test {
     }
 
     function test_RemoveSanction() public whenAlreadySanctioned {
+        vm.expectEmit(true, false, false, true);
+        emit SanctionStatus(testUser, false);
         token.removeSanction(testUser);
         assertEq(token.hasSanction(testUser), false);
     }

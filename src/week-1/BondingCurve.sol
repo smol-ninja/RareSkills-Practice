@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity 0.8.19;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IERC1820Registry } from "@openzeppelin/contracts/utils/introspection/IERC1820Registry.sol";
 import { IERC1363Receiver } from "@openzeppelin/contracts/interfaces/IERC1363Receiver.sol";
@@ -39,18 +38,15 @@ contract BojackToken is ERC20 {
 contract TokenSaleManager {
     using SafeERC20 for BojackToken;
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
-
-    error InsufficientBalance(address erc20);
 
     IERC1820Registry internal constant _ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
 
     BojackToken private immutable _token;
 
-    // @notice RATIO = supply / price where supply is in 1e18
-    uint256 private constant RATIO = 100e18;
-    // @notice set starting price to be $0
-    uint256 private _currentPrice = 0;
+    // @notice RATIO = supply / price
+    uint256 private constant RATIO = 100;
+    // @notice set starting price to be 0, supports decimal prices
+    uint256 private _currentPrice;
 
     constructor() {
         _token = new BojackToken("Bojack", "BOJ");
@@ -76,19 +72,19 @@ contract TokenSaleManager {
         // transfer the token from sender address to sale manager address
         IERC20(depositTokenAddress).safeTransferFrom(msg.sender, address(this), depositAmount);
 
-        _buy(msg.sender, depositAmount, depositTokenAddress);
+        _buy(msg.sender, depositAmount);
     }
 
     // @param depositTokenAddress an ERC20 token that user wants to buy with
     // @param depositAmount amount of ERC20 token
     // @param sender the address of the buyer
-    function _buy(address sender, uint256 depositAmount, address depositTokenAddress) private {
+    function _buy(address sender, uint256 depositAmount) private {
         // loading _currentPrice in memory from storage
         uint256 curPrice = _currentPrice;
 
-        uint256 newPrice = _calculateNewPrice(depositAmount, depositTokenAddress, curPrice);
+        uint256 newPrice = _calculateNewPrice(depositAmount, curPrice);
 
-        uint256 transferAmount = newPrice.sub(curPrice).mul(RATIO);
+        uint256 transferAmount = (newPrice - curPrice) * RATIO;
         _currentPrice = newPrice;
 
         // mint and send BOJ tokens to buyer address
@@ -96,57 +92,49 @@ contract TokenSaleManager {
     }
 
     // @return the average price of BOJ token that user would receive
-    function calculateAvgPrice(uint256 depositAmount, address depositTokenAddress) external view returns (uint256) {
+    function calculateAvgPrice(uint256 depositAmount) external view returns (uint256 avgPrice) {
         // loading _currentPrice in memory from storage
         uint256 curPrice = _currentPrice;
-        uint256 newPrice = _calculateNewPrice(depositAmount, depositTokenAddress, curPrice);
+        uint256 newPrice = _calculateNewPrice(depositAmount, curPrice);
 
-        return Math.average(newPrice, curPrice);
-    }
-
-    // @notice to calculate total value of tokens that user buys with
-    // @return default to 1
-    function getOraclePrice(address) private pure returns (uint256) {
-        return 1;
+        avgPrice = Math.average(newPrice, curPrice);
     }
 
     // @notice calculate the new price of the BOJ token
     // @return the new price of the BOJ token
-    function _calculateNewPrice(
-        uint256 depositAmount,
-        address depositTokenAddress,
-        uint256 curPrice
-    )
-        private
-        pure
-        returns (uint256 newPrice)
-    {
-        uint256 tokenValueIn = depositAmount.mul(getOraclePrice(depositTokenAddress));
-
-        // newPrice = sqrt(curPrice^2 + 2 * RATIO * tokenValueIn)
-        newPrice = Math.sqrt(curPrice.mul(curPrice).add(tokenValueIn.mul(2).div(RATIO)));
+    function _calculateNewPrice(uint256 depositAmount, uint256 curPrice) private pure returns (uint256 newPrice) {
+        // newPrice = sqrt(curPrice^2 + 2 * m * depositAmount) where m = 1 / RATIO
+        newPrice = Math.sqrt(curPrice * curPrice + 2e18 * depositAmount / RATIO);
     }
 
     // @dev implementation for ERC777TokensRecipient interface
     function tokensReceived(address, address from, address, uint256 amount, bytes calldata, bytes calldata) external {
-        _buy(from, amount, msg.sender);
+        _buy(from, amount);
     }
 
     // @notice IERC1363Receiver interface to support transferAndCall
     // @dev token transfer to this address would trigger this function. msg.sender is always token address.
-    function onTransferReceived(address, address from, uint256 amount, bytes calldata) external returns (bytes4) {
-        _buy(from, amount, msg.sender);
+    function onTransferReceived(
+        address,
+        address from,
+        uint256 amount,
+        bytes calldata
+    )
+        external
+        returns (bytes4 _selector)
+    {
+        _buy(from, amount);
 
-        return IERC1363Receiver.onTransferReceived.selector;
+        _selector = IERC1363Receiver.onTransferReceived.selector;
     }
 
     // @notice IERC1363Receiver interface to support approveAndCall
     // @dev msg.sender is always token address.
-    function onApprovalReceived(address owner, uint256 amount, bytes calldata) external returns (bytes4) {
+    function onApprovalReceived(address owner, uint256 amount, bytes calldata) external returns (bytes4 _selector) {
         IERC20(msg.sender).safeTransferFrom(owner, address(this), amount);
-        _buy(owner, amount, msg.sender);
+        _buy(owner, amount);
 
-        return IERC1363Spender.onApprovalReceived.selector;
+        _selector = IERC1363Spender.onApprovalReceived.selector;
     }
 
     // @notice function to sell BOJ tokens through bonding curve
@@ -157,20 +145,14 @@ contract TokenSaleManager {
         uint256 curPrice = _currentPrice;
 
         // p1 = p2 - m * (s2 - s1)
-        uint256 newPrice = curPrice.sub(amount.div(RATIO));
+        uint256 newPrice = curPrice - (amount / RATIO);
 
         // tokensOut = area under the curve = avg(p1, p2) * amount
-        uint256 tokensOutValue = Math.average(newPrice.mul(amount), curPrice.mul(amount));
-        uint256 tokensOut = tokensOutValue.div(getOraclePrice(tokenToWithdraw));
-
-        // if erc20 balance on this contract is less than tokensOut, then revert
-        if (tokensOut > IERC20(tokenToWithdraw).balanceOf(address(this))) {
-            revert InsufficientBalance(tokenToWithdraw);
-        }
+        uint256 tokensOutValue = amount * Math.average(newPrice, curPrice) / 1e18;
 
         _currentPrice = newPrice;
         _token.burn(msg.sender, amount);
 
-        IERC20(tokenToWithdraw).transfer(msg.sender, tokensOut);
+        IERC20(tokenToWithdraw).safeTransfer(msg.sender, tokensOutValue);
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity 0.8.19;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -11,18 +11,22 @@ contract Sanction is ERC20, Ownable {
     // @dev gas efficient over `require`
     error AddressIsSanctioned(address);
 
+    event SanctionStatus(address indexed, bool);
+
     constructor() ERC20("Token with Sanctions", "SNCT") Ownable() { }
 
-    function addSanction(address owner_) external onlyOwner {
-        _sanctioned[owner_] = true;
+    function addSanction(address address_) external onlyOwner {
+        _sanctioned[address_] = true;
+        emit SanctionStatus(address_, true);
     }
 
-    function removeSanction(address owner_) external onlyOwner {
-        _sanctioned[owner_] = false;
+    function removeSanction(address address_) external onlyOwner {
+        _sanctioned[address_] = false;
+        emit SanctionStatus(address_, false);
     }
 
-    function hasSanction(address owner_) external view returns (bool) {
-        return _sanctioned[owner_];
+    function hasSanction(address address_) external view returns (bool isSanctioned) {
+        isSanctioned = _sanctioned[address_];
     }
 
     // @dev ERC20 hook that is called before any transfer of tokens

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity 0.8.19;
 
 import { Test } from "forge-std/Test.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -11,8 +11,6 @@ import { ERC1363 } from "./utils/ERC1363.sol";
 
 contract TokenSaleManagerTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 value);
-
-    error InsufficientBalance(address erc20);
 
     TokenSaleManager private manager;
     BojackToken private bojackToken;
@@ -34,9 +32,9 @@ contract TokenSaleManagerTest is Test {
     function test_CalculateAvgPrice() public {
         uint256 depositAmount = 500e18;
 
-        uint256 quotePrice = manager.calculateAvgPrice(depositAmount, address(testToken));
-        // average price should be 1.58 i.e. (0 + sqrt(10)) / 2
-        assertEq(quotePrice, 1);
+        uint256 quotePrice = manager.calculateAvgPrice(depositAmount);
+        // average price should be 1.58 i.e. (0 + sqrt(500*2)) / 2
+        assertEq(quotePrice / 1e16, 158);
     }
 
     function test_Buy_WhenInitialPriceIsZero() public {
@@ -47,16 +45,17 @@ contract TokenSaleManagerTest is Test {
         testToken.approve(address(manager), depositAmount);
 
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(0), testUser, 300e18);
+        // should emit ~158e16 amount
+        emit Transfer(address(0), testUser, 316_227_766_016_837_933_100);
         manager.buy(depositAmount, address(testToken));
 
         vm.stopPrank();
 
         // check for BojackToken balance. minted amount should be depositAmount*2/sqrt(10)
-        assertEq(bojackToken.balanceOf(testUser), 300e18);
-        assertEq(bojackToken.totalSupply(), 300e18);
+        assertEq(bojackToken.balanceOf(testUser), 316_227_766_016_837_933_100);
+        assertEq(bojackToken.totalSupply(), 316_227_766_016_837_933_100);
         // check current price of the BojackToken
-        assertEq(manager.getCurrentPrice(), 3);
+        assertEq(manager.getCurrentPrice() / 1e15, 3162);
     }
 
     modifier whenInitialPriceIsNotZero() {
@@ -75,11 +74,29 @@ contract TokenSaleManagerTest is Test {
         vm.stopPrank();
 
         // check for BojackToken balance.
-        assertEq(bojackToken.balanceOf(anotherUser), 1100e18);
-        assertEq(bojackToken.totalSupply(), prevSupply + 1100e18);
+        assertEq(bojackToken.balanceOf(anotherUser), 1_132_909_908_602_105_924_200);
+        assertEq(bojackToken.totalSupply(), prevSupply + 1_132_909_908_602_105_924_200);
 
         // check current price of the BojackToken
-        assertEq(manager.getCurrentPrice(), 14);
+        assertEq(manager.getCurrentPrice() / 1e16, 1449);
+    }
+
+    function test_Buy_SmallAmounts() public whenInitialPriceIsNotZero {
+        uint256 prevSupply = IERC20(bojackToken).totalSupply();
+
+        deal(address(testToken), anotherUser, 10_000e18);
+        vm.startPrank(anotherUser);
+        testToken.approve(address(manager), 10_000e18);
+
+        manager.buy(1e18, address(testToken));
+        vm.stopPrank();
+
+        // check for BojackToken balance.
+        assertEq(bojackToken.balanceOf(anotherUser), 316_069_810_050_346_400);
+        assertEq(bojackToken.totalSupply(), prevSupply + 316_069_810_050_346_400);
+
+        // check current price of the BojackToken
+        assertEq(manager.getCurrentPrice() / 1e15, 3165);
     }
 
     function test_ERC777_Implementation() public whenInitialPriceIsNotZero {
@@ -96,11 +113,11 @@ contract TokenSaleManagerTest is Test {
         assertEq(token777.balanceOf(address(manager)), 10_000e18);
 
         // check for BojackToken balance.
-        assertEq(bojackToken.balanceOf(anotherUser), 1100e18);
-        assertEq(bojackToken.totalSupply(), prevSupply + 1100e18);
+        assertEq(bojackToken.balanceOf(anotherUser), 1_132_909_908_602_105_924_200);
+        assertEq(bojackToken.totalSupply(), prevSupply + 1_132_909_908_602_105_924_200);
 
         // check current price of the BojackToken
-        assertEq(manager.getCurrentPrice(), 14);
+        assertEq(manager.getCurrentPrice() / 1e16, 1449);
     }
 
     function test_ERC1363_TransferReceived() public whenInitialPriceIsNotZero {
@@ -117,11 +134,11 @@ contract TokenSaleManagerTest is Test {
         assertEq(token1363.balanceOf(address(manager)), 10_000e18);
 
         // check for BojackToken balance.
-        assertEq(bojackToken.balanceOf(anotherUser), 1100e18);
-        assertEq(bojackToken.totalSupply(), prevSupply + 1100e18);
+        assertEq(bojackToken.balanceOf(anotherUser), 1_132_909_908_602_105_924_200);
+        assertEq(bojackToken.totalSupply(), prevSupply + 1_132_909_908_602_105_924_200);
 
         // check current price of the BojackToken
-        assertEq(manager.getCurrentPrice(), 14);
+        assertEq(manager.getCurrentPrice() / 1e16, 1449);
     }
 
     function test_ERC1363_ApprovalReceived() public whenInitialPriceIsNotZero {
@@ -138,38 +155,44 @@ contract TokenSaleManagerTest is Test {
         assertEq(token1363.balanceOf(address(manager)), 10_000e18);
 
         // check for BojackToken balance.
-        assertEq(bojackToken.balanceOf(anotherUser), 1100e18);
-        assertEq(bojackToken.totalSupply(), prevSupply + 1100e18);
+        assertEq(bojackToken.balanceOf(anotherUser), 1_132_909_908_602_105_924_200);
+        assertEq(bojackToken.totalSupply(), prevSupply + 1_132_909_908_602_105_924_200);
 
         // check current price of the BojackToken
-        assertEq(manager.getCurrentPrice(), 14);
+        assertEq(manager.getCurrentPrice() / 1e16, 1449);
     }
 
     function test_Sell() public whenInitialPriceIsNotZero {
         uint256 prevSupply = IERC20(bojackToken).totalSupply();
+        uint256 prevTokenbalance = testToken.balanceOf(address(manager));
 
         vm.startPrank(testUser);
         manager.sell(100e18, address(testToken));
 
+        uint256 expectedNewSupply = prevSupply - 100e18;
+
         vm.stopPrank();
 
         // check for erc20 balances
-        assertEq(testToken.balanceOf(testUser), 250e18);
-        assertEq(testToken.balanceOf(address(manager)), 250e18);
+        assertEq(testToken.balanceOf(testUser), 266_227_766_016_837_933_100);
+        assertEq(testToken.balanceOf(address(manager)), prevTokenbalance - 266_227_766_016_837_933_100);
 
         // check for BojackToken balance.
-        assertEq(bojackToken.balanceOf(testUser), 200e18);
-        assertEq(bojackToken.totalSupply(), prevSupply - 100e18);
+        assertEq(bojackToken.balanceOf(testUser), expectedNewSupply);
+        assertEq(bojackToken.totalSupply(), expectedNewSupply);
 
         // check current price of the BojackToken
-        assertEq(manager.getCurrentPrice(), 2);
+        assertEq(manager.getCurrentPrice() / 1e16, 216);
     }
 
     function test_Sell_RevertWhenRandomERC20() public whenInitialPriceIsNotZero {
         IERC20 randomToken = new ERC20("Random Token", "RT");
 
-        vm.expectRevert(abi.encodeWithSelector(InsufficientBalance.selector, address(randomToken)));
         vm.prank(testUser);
+        vm.expectRevert(bytes("ERC20: transfer amount exceeds balance"));
         manager.sell(100e18, address(randomToken));
+
+        // check current price of the BojackToken. should be same as before
+        assertEq(manager.getCurrentPrice() / 1e16, 316);
     }
 }

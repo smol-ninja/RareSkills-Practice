@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.19;
+pragma solidity 0.8.19;
 
 import { Test } from "forge-std/Test.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -60,22 +60,20 @@ contract EscrowTest is Test {
         vm.startPrank(buyer);
         testToken.approve(address(escrow), 10_000);
 
-        vm.expectEmit(true, false, false, true);
-        emit NewDeposit(seller, 0);
-        escrow.enterEscrow(seller, testToken, 1000);
+        uint256[] memory ids = new uint[](3);
+        for (uint256 i; i < 3; ++i) {
+            vm.expectEmit(true, false, false, true);
+            emit NewDeposit(seller, i);
+            escrow.enterEscrow(seller, testToken, 1000 * (i + 1));
 
-        vm.expectEmit(true, false, false, true);
-        emit NewDeposit(seller, 1);
-        escrow.enterEscrow(seller, testToken, 2000);
+            ids[i] = i;
+        }
 
-        vm.expectEmit(true, false, false, true);
-        emit NewDeposit(seller, 2);
-        escrow.enterEscrow(seller, testToken, 3000);
         vm.stopPrank();
 
         vm.warp(block.timestamp + 3 days);
         vm.prank(seller);
-        escrow.settleForAllIds();
+        escrow.settleForIds(ids);
 
         assertEq(testToken.balanceOf(seller), 6000);
         assertEq(testToken.balanceOf(buyer), 4000);
