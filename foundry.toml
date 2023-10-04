@@ -2,7 +2,7 @@
 
 [profile.default]
   auto_detect_solc = false
-  block_timestamp = 1_680_220_800 # March 31, 2023 at 00:00 GMT
+  block_timestamp = 1_696_413_527 # Oct 4, 2023 at 09:58:47 GMT
   bytecode_hash = "none"
   cbor_metadata = false
   evm_version = "paris"
