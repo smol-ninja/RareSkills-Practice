@@ -11,9 +11,9 @@ contract RiddleSolver is IERC721Receiver {
     Overmint2 private immutable _overmint2;
     address private immutable _owner;
 
-    constructor(address overmint1_, address overmint2_) {
-        _overmint1 = Overmint1(overmint1_);
-        _overmint2 = Overmint2(overmint2_);
+    constructor(Overmint1 overmint1_, Overmint2 overmint2_) {
+        _overmint1 = overmint1_;
+        _overmint2 = overmint2_;
         _owner = msg.sender;
     }
 

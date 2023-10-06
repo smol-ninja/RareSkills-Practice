@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import { Test } from "forge-std/Test.sol";
-
 import { StakingContract } from "../../src/week-2/StakingContract.sol";
 import { MerkleDiscountNftTest } from "./MerkleDiscountNFT.t.sol";
 
@@ -77,7 +75,7 @@ contract StakingContractTest is MerkleDiscountNftTest {
 
         vm.stopPrank();
     }
-    
+
     function test_Unstake() public SaleComplete RandomizeStake {
         assertEq(nft.ownerOf(18), address(stakingContract));
         skip(2 days);

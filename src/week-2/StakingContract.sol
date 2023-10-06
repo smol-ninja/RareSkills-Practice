@@ -12,7 +12,7 @@ contract StakingContract is IERC721Receiver {
     RewardToken public immutable rewardToken;
     IERC721 public immutable merkleDiscountNft;
 
-    mapping (address account => mapping(uint256 tokenId => uint256 timestamp)) private _userRecords;
+    mapping(address account => mapping(uint256 tokenId => uint256 timestamp)) private _userRecords;
 
     // event names
     event Stake(address, uint256);
@@ -36,17 +36,26 @@ contract StakingContract is IERC721Receiver {
      * @param tokenId NFT token ID
      */
     function stake(uint256 tokenId) external {
-        merkleDiscountNft.safeTransferFrom(msg.sender, address(this), tokenId); 
+        merkleDiscountNft.safeTransferFrom(msg.sender, address(this), tokenId);
 
         emit Stake(msg.sender, tokenId);
     }
 
-    function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public override returns (bytes4 selector_) {
+    function onERC721Received(
+        address,
+        address from,
+        uint256 tokenId,
+        bytes calldata
+    )
+        public
+        override
+        returns (bytes4 selector_)
+    {
         // updates `_userRecords` map and set current timestamp
         _userRecords[from][tokenId] = block.timestamp;
 
         selector_ = IERC721Receiver.onERC721Received.selector;
-    } 
+    }
 
     /**
      * @param tokenId NFT token ID
@@ -90,7 +99,7 @@ contract StakingContract is IERC721Receiver {
     function _calculateRewards(uint256 tokenId) private view returns (uint256 rewards) {
         uint256 storedTimestamp = _userRecords[msg.sender][tokenId];
 
-       // revert if tokenid does not exist in the map for this user
+        // revert if tokenid does not exist in the map for this user
         if (storedTimestamp == 0) revert NoTokenRecordFound();
 
         // do the maths here

@@ -18,7 +18,7 @@ contract RiddleSolverTest is Test {
         overmint2 = new Overmint2();
 
         vm.prank(owner);
-        riddleSolver = new RiddleSolver(address(overmint1), address(overmint2));
+        riddleSolver = new RiddleSolver(overmint1, overmint2);
     }
 
     function test_exploitMint1() public {

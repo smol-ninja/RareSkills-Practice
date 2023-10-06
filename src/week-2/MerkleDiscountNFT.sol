@@ -52,13 +52,12 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
         unchecked {
             totalSupply++;
         }
-
         _safeMint(msg.sender, totalSupply);
 
         // return excess ether
         if (msg.value > MINT_PRICE) {
             unchecked {
-                (bool status, ) = payable(msg.sender).call{value: msg.value - MINT_PRICE}("");
+                (bool status,) = payable(msg.sender).call{ value: msg.value - MINT_PRICE }("");
                 if (!status) revert FailedToTransferEther();
             }
         }
@@ -68,7 +67,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
 
     /**
      * @param index to look in BitMap
-     * @return result whether the bit at `index` is set. 
+     * @return result whether the bit at `index` is set.
      */
     function _hasMinted(uint256 index) private view returns (bool result) {
         result = BitMaps.get(_bitmap, index);
@@ -87,18 +86,18 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
         bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender, index))));
         if (!MerkleProof.verify(proof, merkleRoot, leaf)) revert InvalidProof();
 
+        // set bit at `index` in BitMap
+        BitMaps.set(_bitmap, index);
+
         unchecked {
             totalSupply++;
         }
-
-        // set bit at `index` in BitMap
-        BitMaps.set(_bitmap, index);
         _safeMint(msg.sender, totalSupply);
 
         // return excess ether
         if (msg.value > DISCOUNTED_PRICE) {
             unchecked {
-                (bool status, ) = payable(msg.sender).call{value: msg.value - DISCOUNTED_PRICE}("");
+                (bool status,) = payable(msg.sender).call{ value: msg.value - DISCOUNTED_PRICE }("");
                 if (!status) revert FailedToTransferEther();
             }
         }
@@ -111,7 +110,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
      */
     function withdrawFunds() external onlyOwner {
         // transfer ether using call
-        (bool sent, ) = payable(owner()).call{value: address(this).balance}("");
+        (bool sent,) = payable(owner()).call{ value: address(this).balance }("");
         if (!sent) revert FailedToTransferEther();
     }
 }
