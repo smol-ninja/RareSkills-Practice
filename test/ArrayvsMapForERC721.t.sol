@@ -4,13 +4,13 @@ pragma solidity 0.8.19;
 import { Test } from "forge-std/Test.sol";
 
 contract ArrayvsMapForERC721 {
-    mapping(address owner => mapping(uint256 index => uint256)) public ownedTokensMap;
-    mapping(uint256 tokenId => uint256) public ownedTokensIndexForMap;
-    mapping(address owner => uint256) public balancesForMap;
+    mapping(address owner => mapping(uint256 index => uint256 tokenId)) public ownedTokensMap;
+    mapping(uint256 tokenId => uint256 index) public ownedTokensIndexForMap;
+    mapping(address owner => uint256 balance) public balancesForMap;
 
-    mapping(address owner => uint256[]) public ownedTokensArray;
-    mapping(uint256 tokenId => uint256) public ownedTokensIndexForArray;
-    mapping(address owner => uint256) public balancesForArray;
+    mapping(address owner => uint256[] tokenArray) public ownedTokensArray;
+    mapping(uint256 tokenId => uint256 index) public ownedTokensIndexForArray;
+    mapping(address owner => uint256 balance) public balancesForArray;
 
     /*//////////////////////////////////////////////////////////////////////////
                         Read, Add, Remove functions for map

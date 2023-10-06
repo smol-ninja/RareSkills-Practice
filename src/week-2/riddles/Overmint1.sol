@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract Overmint1 is ERC721 {
     using Address for address;
 
-    mapping(address => uint256) public amountMinted;
+    mapping(address a => uint256 b) public amountMinted;
     uint256 public totalSupply;
 
     constructor() ERC721("Overmint1", "AT") { }
