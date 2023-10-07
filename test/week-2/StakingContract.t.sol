@@ -81,6 +81,11 @@ contract StakingContractTest is MerkleDiscountNftTest {
         skip(2 days);
 
         vm.startPrank(userC); // 8 and 18
+        // revert for random token ID
+        vm.expectRevert(abi.encodeWithSelector(NoTokenRecordFound.selector));
+        stakingContract.unstake(2);
+
+        // success case
         stakingContract.unstake(18);
         assertEq(stakingContract.rewardToken().balanceOf(userC), 20e18);
         assertEq(nft.ownerOf(18), userC);
