@@ -36,6 +36,7 @@ contract StakingContract is IERC721Receiver {
      * @param tokenId NFT token ID
      */
     function stake(uint256 tokenId) external {
+        // this is a "safe" transfer which calls `onERC721Received` hook on the receiver
         merkleDiscountNft.safeTransferFrom(msg.sender, address(this), tokenId);
 
         emit Stake(msg.sender, tokenId);
