@@ -17,7 +17,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
     BitMaps.BitMap private _bitmap;
 
     // event names
-    event Minted(address, uint256);
+    event Minted(address indexed, uint256 indexed);
 
     // error names
     error MintingClosed();

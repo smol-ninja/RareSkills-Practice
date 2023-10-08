@@ -6,6 +6,8 @@ import { Test } from "forge-std/Test.sol";
 import { MerkleDiscountNFT } from "../../src/week-2/MerkleDiscountNFT.sol";
 
 abstract contract MerkleDiscountNftTest is Test {
+    event Minted(address indexed, uint256 indexed);
+
     error MintingClosed();
     error NotEnoughEtherSent();
     error AlreadyMinted();
@@ -56,6 +58,10 @@ abstract contract MerkleDiscountNftTest is Test {
     function test_PublicMint() public {
         // success when ether sent is equal to the mint price
         vm.startPrank(notuserAddress);
+
+        vm.expectEmit(true, true, false, false);
+        emit Minted(notuserAddress, 1);
+
         nft.mint{ value: 0.1 ether }();
         assertEq(nft.balanceOf(notuserAddress), 1);
         assertEq(address(nft).balance, 0.1 ether);
@@ -65,6 +71,9 @@ abstract contract MerkleDiscountNftTest is Test {
         nft.mint{ value: 0.09 ether }();
 
         // success when ether sent is more than mint price
+        vm.expectEmit(true, true, false, false);
+        emit Minted(notuserAddress, 2);
+
         nft.mint{ value: 1 ether }();
         assertEq(nft.balanceOf(notuserAddress), 2);
         assertEq(notuserAddress.balance, 2.8 ether);
@@ -107,6 +116,8 @@ abstract contract MerkleDiscountNftTest is Test {
 
         // success for whitelisted address and valid proof with valid index
         vm.prank(userC);
+        vm.expectEmit(true, true, false, false);
+        emit Minted(userC, 1);
         nft.mintWhitelisted{ value: 0.1 ether }(3, proof);
         assertEq(nft.balanceOf(userC), 1);
         assertEq(address(nft).balance, 0.08 ether);

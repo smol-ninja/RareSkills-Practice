@@ -9,9 +9,9 @@ contract StakingContractTest is MerkleDiscountNftTest {
     uint256[] private randomIds = [2, 4, 6, 7, 8, 16, 18];
     address[] private ownersOfIds = [userB, userD, userA, userB, userC, userA, userC];
 
-    event Stake(address, uint256);
-    event Unstake(address, uint256);
-    event Claim(address, uint256, uint256);
+    event Stake(address indexed, uint256 indexed);
+    event Unstake(address indexed, uint256 indexed);
+    event Claim(address indexed, uint256 indexed, uint256);
 
     error NoTokenRecordFound();
 
@@ -29,7 +29,7 @@ contract StakingContractTest is MerkleDiscountNftTest {
         stakingContract.stake(2);
 
         // stake for valid tokenid
-        vm.expectEmit();
+        vm.expectEmit(true, true, false, false);
         emit Stake(userA, 6);
         stakingContract.stake(6);
 
@@ -46,7 +46,7 @@ contract StakingContractTest is MerkleDiscountNftTest {
         for (uint256 i; i < randomIds.length; ++i) {
             vm.startPrank(ownersOfIds[i]);
             nft.approve(address(stakingContract), randomIds[i]);
-            vm.expectEmit();
+            vm.expectEmit(true, true, false, false);
             emit Stake(ownersOfIds[i], randomIds[i]);
             stakingContract.stake(randomIds[i]);
 
@@ -65,11 +65,15 @@ contract StakingContractTest is MerkleDiscountNftTest {
         stakingContract.claimRewards(2);
 
         // success case
+        vm.expectEmit(true, true, false, true);
+        emit Claim(userC, 8, 5e18);
         stakingContract.claimRewards(8);
         assertEq(stakingContract.rewardToken().balanceOf(userC), 5e18);
 
         skip(1 minutes);
         // success case
+        vm.expectEmit(true, true, false, true);
+        emit Claim(userC, 8, 6_944_444_444_444_444);
         stakingContract.claimRewards(8);
         assertEq(stakingContract.rewardToken().balanceOf(userC), 5e18 + 6_944_444_444_444_444);
 
@@ -86,6 +90,8 @@ contract StakingContractTest is MerkleDiscountNftTest {
         stakingContract.unstake(2);
 
         // success case
+        vm.expectEmit(true, true, false, false);
+        emit Unstake(userC, 18);
         stakingContract.unstake(18);
         assertEq(stakingContract.rewardToken().balanceOf(userC), 20e18);
         assertEq(nft.ownerOf(18), userC);
@@ -102,6 +108,8 @@ contract StakingContractTest is MerkleDiscountNftTest {
         skip(12 hours);
 
         // // success case
+        vm.expectEmit(true, true, false, true);
+        emit Claim(userC, 18, 5e18);
         stakingContract.claimRewards(18);
         assertEq(stakingContract.rewardToken().balanceOf(userC), 20e18 + 5e18);
 

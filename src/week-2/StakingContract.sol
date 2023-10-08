@@ -15,9 +15,9 @@ contract StakingContract is IERC721Receiver {
     mapping(address account => mapping(uint256 tokenId => uint256 timestamp)) private _userRecords;
 
     // event names
-    event Stake(address, uint256);
-    event Unstake(address, uint256);
-    event Claim(address, uint256, uint256);
+    event Stake(address indexed, uint256 indexed);
+    event Unstake(address indexed, uint256 indexed);
+    event Claim(address indexed, uint256 indexed, uint256);
 
     // error names
     error NoTokenRecordFound();
