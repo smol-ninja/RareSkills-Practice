@@ -20,12 +20,20 @@ If this is your first time with Foundry, check out the
 
 This is a list of the most frequently needed commands.
 
-### Build
+### Copy .env
 
-Build the contracts:
+Add API keys for fork testing
 
 ```sh
-$ forge build
+$ cp .env.example .env
+```
+
+### Build
+
+Compile the contracts:
+
+```sh
+$ npm run build
 ```
 
 ### Clean
@@ -33,45 +41,21 @@ $ forge build
 Delete the build artifacts and cache directories:
 
 ```sh
-$ forge clean
+$ npm run clean
 ```
 
-### Compile
-
-Compile the contracts:
+### Testing
 
 ```sh
-$ forge build
+$ npm run test
 ```
 
 ### Coverage
 
-Get a test coverage report:
+Generate test coverage and output result to the terminal:
 
 ```sh
-$ forge coverage
-```
-
-### Deploy
-
-Deploy to Anvil:
-
-```sh
-$ forge script script/Deploy.s.sol --broadcast --fork-url http://localhost:8545
-```
-
-For this script to work, you need to have a `MNEMONIC` environment variable set to a valid
-[BIP39 mnemonic](https://iancoleman.io/bip39/).
-
-For instructions on how to deploy to a testnet or mainnet, check out the
-[Solidity Scripting](https://book.getfoundry.sh/tutorials/solidity-scripting.html) tutorial.
-
-### Format
-
-Format the contracts:
-
-```sh
-$ forge fmt
+$ npm run test:coverage
 ```
 
 ### Gas Usage
@@ -79,7 +63,7 @@ $ forge fmt
 Get a gas report:
 
 ```sh
-$ forge test --gas-report
+$ forge test --match-contract CONTRACT_NAME --gas-report
 ```
 
 ### Lint
@@ -87,34 +71,19 @@ $ forge test --gas-report
 Lint the contracts:
 
 ```sh
-$ pnpm lint
+$ npm run lint
 ```
 
-### Test
+### Format
 
-Run the tests:
-
-```sh
-$ forge test
-```
-
-Generate test coverage and output result to the terminal:
+Format the contracts:
 
 ```sh
-$ pnpm test:coverage
-```
-
-Generate test coverage with lcov report (you'll have to open the `./coverage/index.html` file in your browser, to do so
-simply copy paste the path):
-
-```sh
-$ pnpm test:coverage:report
+$ npm run prettier:write
 ```
 
 ## Notes
 
-1. Foundry uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) to manage dependencies. For
-   detailed instructions on working with dependencies, please refer to the
-   [guide](https://book.getfoundry.sh/projects/dependencies.html) in the book
-2. You don't have to create a `.env` file, but filling in the environment variables may be useful when debugging and
-   testing against a fork.
+Foundry uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) to manage dependencies. For detailed
+instructions on working with dependencies, please refer to the
+[guide](https://book.getfoundry.sh/projects/dependencies.html) in the book
