@@ -6,8 +6,8 @@ import { Test } from "forge-std/Test.sol";
 import { EnumerableNFT, Prime } from "../../src/week-2/PrimeNFT.sol";
 
 contract PrimeNFTTest is Test {
-    uint32 private constant LARGEST_PRIME_BELOW_1B = 999_999_937;
-    uint8[] private first25Primes =
+    uint256 private constant LARGEST_PRIME_BELOW_1B = 999_999_937;
+    uint256[25] private first25Primes =
         [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
 
     EnumerableNFT private nft;

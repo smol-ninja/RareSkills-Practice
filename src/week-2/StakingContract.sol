@@ -7,8 +7,8 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { RewardToken } from "./RewardToken.sol";
 
 contract StakingContract is IERC721Receiver {
-    uint32 private constant _TWENTY_FOUR_HOURS = 24 hours;
-    uint64 public constant DAILY_REWARDS = 10e18;
+    uint256 private constant _TWENTY_FOUR_HOURS = 24 hours;
+    uint256 public constant DAILY_REWARDS = 10e18;
     RewardToken public immutable rewardToken;
     IERC721 public immutable merkleDiscountNft;
 

@@ -6,8 +6,8 @@ import { MerkleDiscountNftTest } from "./MerkleDiscountNFT.t.sol";
 
 contract StakingContractTest is MerkleDiscountNftTest {
     StakingContract private stakingContract;
-    uint256[] private randomIds = [2, 4, 6, 7, 8, 16, 18];
-    address[] private ownersOfIds = [userB, userD, userA, userB, userC, userA, userC];
+    uint256[7] private randomIds = [2, 4, 6, 7, 8, 16, 18];
+    address[7] private ownersOfIds = [userB, userD, userA, userB, userC, userA, userC];
 
     event Stake(address indexed, uint256 indexed);
     event Unstake(address indexed, uint256 indexed);

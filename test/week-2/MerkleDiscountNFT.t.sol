@@ -23,11 +23,11 @@ abstract contract MerkleDiscountNftTest is Test {
     address internal userE = address(0x1005);
 
     // non-whitelisted address
-    address internal notuserAddress = makeAddr("notuserAddress");
+    address internal notWhitelisted = makeAddr("notWhitelisted");
 
     address internal owner = makeAddr("owner");
 
-    address[] private users = [userA, userB, userC, userD, userE, notuserAddress];
+    address[6] private users = [userA, userB, userC, userD, userE, notWhitelisted];
 
     function setUp() public virtual {
         for (uint256 i; i < users.length; ++i) {
@@ -57,13 +57,13 @@ abstract contract MerkleDiscountNftTest is Test {
 
     function test_PublicMint() public {
         // success when ether sent is equal to the mint price
-        vm.startPrank(notuserAddress);
+        vm.startPrank(notWhitelisted);
 
         vm.expectEmit(true, true, false, false);
-        emit Minted(notuserAddress, 1);
+        emit Minted(notWhitelisted, 1);
 
         nft.mint{ value: 0.1 ether }();
-        assertEq(nft.balanceOf(notuserAddress), 1);
+        assertEq(nft.balanceOf(notWhitelisted), 1);
         assertEq(address(nft).balance, 0.1 ether);
 
         // revert when ether sent is less than mint price
@@ -72,11 +72,11 @@ abstract contract MerkleDiscountNftTest is Test {
 
         // success when ether sent is more than mint price
         vm.expectEmit(true, true, false, false);
-        emit Minted(notuserAddress, 2);
+        emit Minted(notWhitelisted, 2);
 
         nft.mint{ value: 1 ether }();
-        assertEq(nft.balanceOf(notuserAddress), 2);
-        assertEq(notuserAddress.balance, 2.8 ether);
+        assertEq(nft.balanceOf(notWhitelisted), 2);
+        assertEq(notWhitelisted.balance, 2.8 ether);
         assertEq(address(nft).balance, 0.2 ether);
 
         vm.stopPrank();
@@ -100,7 +100,7 @@ abstract contract MerkleDiscountNftTest is Test {
         proof[2] = 0x77ceaa9a6b391c16a2ef5ff8d0586361c6aaad37062e9af77f9efdec30d06b8f;
 
         // revert if address is not whitelisted but valid proof
-        vm.prank(notuserAddress);
+        vm.prank(notWhitelisted);
         vm.expectRevert(abi.encodeWithSelector(InvalidProof.selector));
         nft.mintWhitelisted{ value: 0.1 ether }(3, proof);
 

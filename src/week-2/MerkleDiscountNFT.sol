@@ -8,12 +8,13 @@ import { BitMaps } from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
-    uint8 public constant MAX_SUPPLY = 20;
-    uint8 private constant _DEFAULT_ROYALTY = 250; // 2.5%
-    uint8 public totalSupply;
-    uint64 public constant MINT_PRICE = 0.1 ether;
-    uint64 public constant DISCOUNTED_PRICE = 0.08 ether; // 20% discount
+    uint256 public constant MAX_SUPPLY = 20;
+    uint256 private constant _DEFAULT_ROYALTY = 250; // 2.5%
+    uint256 public constant MINT_PRICE = 0.1 ether;
+    uint256 public constant DISCOUNTED_PRICE = 0.08 ether; // 20% discount
     bytes32 public immutable merkleRoot;
+
+    uint256 public totalSupply;
     BitMaps.BitMap private _bitmap;
 
     // event names
@@ -30,7 +31,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
      * @param merkleRoot_ root node of merkle tree containing addresses eligible for discount
      */
     constructor(bytes32 merkleRoot_) ERC721("MerkleDiscountNFT", "MDNFT") Ownable2Step() {
-        _setDefaultRoyalty(owner(), _DEFAULT_ROYALTY);
+        _setDefaultRoyalty(owner(), uint96(_DEFAULT_ROYALTY));
         merkleRoot = merkleRoot_;
     }
 
