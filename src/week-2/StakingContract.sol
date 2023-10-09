@@ -7,12 +7,12 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { RewardToken } from "./RewardToken.sol";
 
 contract StakingContract is IERC721Receiver {
-    uint256 private constant _TWENTY_FOUR_HOURS = 24 hours;
+    uint256 private constant _ONE_DAY = 1 days;
     uint256 public constant DAILY_REWARDS = 10e18;
     RewardToken public immutable rewardToken;
     IERC721 public immutable merkleDiscountNft;
 
-    mapping(address account => mapping(uint256 tokenId => uint256 timestamp)) private _userRecords;
+    mapping(address account => mapping(uint256 tokenId => uint256 timestamp)) private _lastClaimed;
 
     // event names
     event Stake(address indexed, uint256 indexed);
@@ -21,6 +21,7 @@ contract StakingContract is IERC721Receiver {
 
     // error names
     error NoTokenRecordFound();
+    error UnknownNFTFound();
 
     /**
      * @dev deploying this contract also deploys reward token
@@ -52,8 +53,9 @@ contract StakingContract is IERC721Receiver {
         override
         returns (bytes4 selector_)
     {
-        // updates `_userRecords` map and set current timestamp
-        _userRecords[from][tokenId] = block.timestamp;
+        if (msg.sender != address(merkleDiscountNft)) revert UnknownNFTFound();
+        // updates `_lastClaimed` map and set current timestamp
+        _lastClaimed[from][tokenId] = block.timestamp;
 
         selector_ = IERC721Receiver.onERC721Received.selector;
     }
@@ -64,8 +66,8 @@ contract StakingContract is IERC721Receiver {
     function unstake(uint256 tokenId) external {
         uint256 totalRewards = _calculateRewards(tokenId);
 
-        // delete _userRecords
-        delete _userRecords[msg.sender][tokenId];
+        // delete _lastClaimed
+        delete _lastClaimed[msg.sender][tokenId];
 
         // mint reward token to user address
         rewardToken.mint(msg.sender, totalRewards);
@@ -84,7 +86,7 @@ contract StakingContract is IERC721Receiver {
         uint256 totalRewards = _calculateRewards(tokenId);
 
         // update timestamp state to current timestamp
-        _userRecords[msg.sender][tokenId] = block.timestamp;
+        _lastClaimed[msg.sender][tokenId] = block.timestamp;
 
         // mint reward token to user address
         rewardToken.mint(msg.sender, totalRewards);
@@ -98,14 +100,14 @@ contract StakingContract is IERC721Receiver {
      * @return rewards of the user since last claim
      */
     function _calculateRewards(uint256 tokenId) private view returns (uint256 rewards) {
-        uint256 storedTimestamp = _userRecords[msg.sender][tokenId];
+        uint256 storedTimestamp = _lastClaimed[msg.sender][tokenId];
 
         // revert if tokenid does not exist in the map for this user
         if (storedTimestamp == 0) revert NoTokenRecordFound();
 
         // do the maths here
         unchecked {
-            rewards = (DAILY_REWARDS * (block.timestamp - storedTimestamp)) / _TWENTY_FOUR_HOURS;
+            rewards = (DAILY_REWARDS * (block.timestamp - storedTimestamp)) / _ONE_DAY;
         }
     }
 }

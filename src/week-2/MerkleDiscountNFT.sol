@@ -22,7 +22,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
 
     // error names
     error MintingClosed();
-    error NotEnoughEtherSent();
+    error IncorrectEtherSent();
     error AlreadyMinted();
     error FailedToTransferEther();
     error InvalidProof();
@@ -48,20 +48,12 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
      */
     function mint() external payable {
         if (totalSupply >= MAX_SUPPLY) revert MintingClosed();
-        if (msg.value < MINT_PRICE) revert NotEnoughEtherSent();
+        if (msg.value != MINT_PRICE) revert IncorrectEtherSent();
 
         unchecked {
             totalSupply++;
         }
         _safeMint(msg.sender, totalSupply);
-
-        // return excess ether
-        if (msg.value > MINT_PRICE) {
-            unchecked {
-                (bool status,) = payable(msg.sender).call{ value: msg.value - MINT_PRICE }("");
-                if (!status) revert FailedToTransferEther();
-            }
-        }
 
         emit Minted(msg.sender, totalSupply);
     }
@@ -81,7 +73,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
      */
     function mintWhitelisted(uint256 index, bytes32[] calldata proof) external payable {
         if (totalSupply >= MAX_SUPPLY) revert MintingClosed();
-        if (msg.value < DISCOUNTED_PRICE) revert NotEnoughEtherSent();
+        if (msg.value != DISCOUNTED_PRICE) revert IncorrectEtherSent();
         if (_hasMinted(index)) revert AlreadyMinted();
 
         bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender, index))));
@@ -94,14 +86,6 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
             totalSupply++;
         }
         _safeMint(msg.sender, totalSupply);
-
-        // return excess ether
-        if (msg.value > DISCOUNTED_PRICE) {
-            unchecked {
-                (bool status,) = payable(msg.sender).call{ value: msg.value - DISCOUNTED_PRICE }("");
-                if (!status) revert FailedToTransferEther();
-            }
-        }
 
         emit Minted(msg.sender, totalSupply);
     }

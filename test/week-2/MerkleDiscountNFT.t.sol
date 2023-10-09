@@ -9,7 +9,7 @@ abstract contract MerkleDiscountNftTest is Test {
     event Minted(address indexed, uint256 indexed);
 
     error MintingClosed();
-    error NotEnoughEtherSent();
+    error IncorrectEtherSent();
     error AlreadyMinted();
     error InvalidProof();
 
@@ -61,23 +61,17 @@ abstract contract MerkleDiscountNftTest is Test {
 
         vm.expectEmit(true, true, false, false);
         emit Minted(notWhitelisted, 1);
-
         nft.mint{ value: 0.1 ether }();
         assertEq(nft.balanceOf(notWhitelisted), 1);
         assertEq(address(nft).balance, 0.1 ether);
 
         // revert when ether sent is less than mint price
-        vm.expectRevert(abi.encodeWithSelector(NotEnoughEtherSent.selector));
+        vm.expectRevert(abi.encodeWithSelector(IncorrectEtherSent.selector));
         nft.mint{ value: 0.09 ether }();
 
         // success when ether sent is more than mint price
-        vm.expectEmit(true, true, false, false);
-        emit Minted(notWhitelisted, 2);
-
-        nft.mint{ value: 1 ether }();
-        assertEq(nft.balanceOf(notWhitelisted), 2);
-        assertEq(notWhitelisted.balance, 2.8 ether);
-        assertEq(address(nft).balance, 0.2 ether);
+        vm.expectRevert(abi.encodeWithSelector(IncorrectEtherSent.selector));
+        nft.mint{ value: 2.8 ether }();
 
         vm.stopPrank();
     }
@@ -99,26 +93,36 @@ abstract contract MerkleDiscountNftTest is Test {
         proof[1] = 0xfb87a8546b051e852ad01fb1acc823d4066ae61881e2bb9ec7230d5070dba278;
         proof[2] = 0x77ceaa9a6b391c16a2ef5ff8d0586361c6aaad37062e9af77f9efdec30d06b8f;
 
+        // revert when ether sent is less than mint price
+        vm.prank(userC);
+        vm.expectRevert(abi.encodeWithSelector(IncorrectEtherSent.selector));
+        nft.mintWhitelisted{ value: 0.07 ether }(3, proof);
+
+        // success when ether sent is more than mint price
+        vm.prank(userC);
+        vm.expectRevert(abi.encodeWithSelector(IncorrectEtherSent.selector));
+        nft.mintWhitelisted{ value: 2.8 ether }(3, proof);
+
         // revert if address is not whitelisted but valid proof
         vm.prank(notWhitelisted);
         vm.expectRevert(abi.encodeWithSelector(InvalidProof.selector));
-        nft.mintWhitelisted{ value: 0.1 ether }(3, proof);
+        nft.mintWhitelisted{ value: 0.08 ether }(3, proof);
 
         // revert if address is whitelisted but invalid proof
         vm.prank(userA);
         vm.expectRevert(abi.encodeWithSelector(InvalidProof.selector));
-        nft.mintWhitelisted{ value: 0.1 ether }(3, proof);
+        nft.mintWhitelisted{ value: 0.08 ether }(3, proof);
 
         // revert if address is whitelisted and valid proof but invalid index
         vm.prank(userC);
         vm.expectRevert(abi.encodeWithSelector(InvalidProof.selector));
-        nft.mintWhitelisted{ value: 0.1 ether }(1, proof);
+        nft.mintWhitelisted{ value: 0.08 ether }(1, proof);
 
         // success for whitelisted address and valid proof with valid index
         vm.prank(userC);
         vm.expectEmit(true, true, false, false);
         emit Minted(userC, 1);
-        nft.mintWhitelisted{ value: 0.1 ether }(3, proof);
+        nft.mintWhitelisted{ value: 0.08 ether }(3, proof);
         assertEq(nft.balanceOf(userC), 1);
         assertEq(address(nft).balance, 0.08 ether);
         assertEq(userC.balance, 2.92 ether);
@@ -126,7 +130,20 @@ abstract contract MerkleDiscountNftTest is Test {
         // fail for already minted
         vm.prank(userC);
         vm.expectRevert(abi.encodeWithSelector(AlreadyMinted.selector));
-        nft.mintWhitelisted{ value: 1 ether }(3, proof);
+        nft.mintWhitelisted{ value: 0.08 ether }(3, proof);
+
+        // revert when supply cap has reached
+        uint256 remainingSupply = nft.MAX_SUPPLY() - nft.totalSupply();
+        for (uint256 i; i < remainingSupply; ++i) {
+            vm.prank(userC);
+            nft.mint{ value: 0.1 ether }();
+        }
+        vm.prank(userA);
+        proof = new bytes32[](2);
+        proof[0] = 0xc4a4487caaaaa1fd5f6a29a75cb3cad10e405d17052c36a1a12dbf1beb67d2b5;
+        proof[1] = 0x77ceaa9a6b391c16a2ef5ff8d0586361c6aaad37062e9af77f9efdec30d06b8f;
+        vm.expectRevert(abi.encodeWithSelector(MintingClosed.selector));
+        nft.mintWhitelisted{ value: 0.08 ether }(1, proof);
     }
 
     function test_WithdrawSaleFund() public SaleComplete {

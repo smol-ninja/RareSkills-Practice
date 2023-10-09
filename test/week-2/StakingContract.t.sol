@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import { StakingContract } from "../../src/week-2/StakingContract.sol";
+import { MerkleDiscountNFT } from "../../src/week-2/MerkleDiscountNFT.sol";
 import { MerkleDiscountNftTest } from "./MerkleDiscountNFT.t.sol";
 
 contract StakingContractTest is MerkleDiscountNftTest {
@@ -14,6 +15,7 @@ contract StakingContractTest is MerkleDiscountNftTest {
     event Claim(address indexed, uint256 indexed, uint256);
 
     error NoTokenRecordFound();
+    error UnknownNFTFound();
 
     function setUp() public override {
         super.setUp();
@@ -38,6 +40,24 @@ contract StakingContractTest is MerkleDiscountNftTest {
         // stake with direct nft transfer
         nft.safeTransferFrom(userA, address(stakingContract), 16);
         assertEq(nft.ownerOf(16), address(stakingContract));
+
+        vm.stopPrank();
+    }
+
+    function test_Stake_RevertForRandomNFT() public {
+        vm.startPrank(userA);
+
+        // stake a random NFT
+        MerkleDiscountNFT randomNFT = new MerkleDiscountNFT(0x0);
+        randomNFT.mint{ value: 0.1 ether }();
+        randomNFT.setApprovalForAll(address(stakingContract), true);
+        vm.expectRevert(abi.encodeWithSelector(UnknownNFTFound.selector));
+        randomNFT.safeTransferFrom(userA, address(stakingContract), 1);
+
+        skip(12 hours);
+
+        vm.expectRevert(abi.encodeWithSelector(NoTokenRecordFound.selector));
+        stakingContract.claimRewards(1);
 
         vm.stopPrank();
     }
