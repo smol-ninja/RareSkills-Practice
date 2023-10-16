@@ -8,8 +8,7 @@
   },
   "devDependencies": {
     "@openzeppelin/merkle-tree": "^1.0.5",
-    "prettier": "^3.0.0",
-    "solhint-community": "^3.6.0"
+    "prettier": "^3.0.0"
   },
   "keywords": [
     "blockchain",
@@ -32,5 +31,7 @@
     "test:coverage": "eval $(grep API_KEY_INFURA .env) && forge coverage --fork-url https://mainnet.infura.io/v3/$API_KEY_INFURA",
     "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
   },
-  "type": "module"
+  "dependencies": {
+    "solhint": "^3.6.2"
+  }
 }
