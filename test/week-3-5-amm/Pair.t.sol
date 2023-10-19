@@ -120,7 +120,7 @@ contract PairTest is Test {
     }
 
     function testRevert_Mint_Overflow() public GivenPoolInitiated {
-        deal(address(token0), user, 2**113);
+        deal(address(token0), user, 2 ** 113);
 
         vm.prank(user);
         token0.transfer(address(pair), type(uint112).max);
@@ -312,7 +312,7 @@ contract PairTest is Test {
         vm.expectRevert(abi.encodeWithSelector(ZeroInput.selector));
         pair.swap(0, 1, user, "");
 
-        deal(address(token0), user, type(uint112).max); 
+        deal(address(token0), user, type(uint112).max);
         vm.prank(user);
         token0.transfer(address(pair), type(uint112).max);
         vm.expectRevert(abi.encodeWithSelector(Overflow.selector));
