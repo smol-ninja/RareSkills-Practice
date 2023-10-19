@@ -27,9 +27,9 @@
     "lint:sol": "forge fmt --check && pnpm solhint {script,src,test}/**/*.sol",
     "prettier:check": "prettier --check **/*.{json,md,yml} --ignore-path=.prettierignore",
     "prettier:write": "prettier --write **/*.{json,md,yml} --ignore-path=.prettierignore",
-    "test": "eval $(grep API_KEY_INFURA .env) && forge test --fork-url https://mainnet.infura.io/v3/$API_KEY_INFURA",
-    "test:coverage": "eval $(grep API_KEY_INFURA .env) && forge coverage --fork-url https://mainnet.infura.io/v3/$API_KEY_INFURA",
-    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
+    "test": "forge test",
+    "test:coverage": "forge coverage",
+    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage && open coverage/index.html"
   },
   "dependencies": {
     "solhint": "^3.6.2"
