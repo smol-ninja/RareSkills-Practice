@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import { Test } from "forge-std/Test.sol";
+import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 import { MerkleDiscountNFT } from "../../src/week-2/MerkleDiscountNFT.sol";
 
@@ -12,6 +13,7 @@ abstract contract MerkleDiscountNftTest is Test {
     error IncorrectEtherSent();
     error AlreadyMinted();
     error InvalidProof();
+    error FailedToTransferEther();
 
     MerkleDiscountNFT internal nft;
 
@@ -37,8 +39,12 @@ abstract contract MerkleDiscountNftTest is Test {
         nft = new MerkleDiscountNFT(0x7ac231947135471a6af7f1b944c422bac53b5eee7759b82171feadff411a423f);
     }
 
-    function test_supportsInterface() public {
-        assertTrue(nft.supportsInterface(0x2a55205a));
+    function test_supportsInterface(bytes4 interfaceId) public {
+        if (interfaceId == type(IERC2981).interfaceId) {
+            assertTrue(nft.supportsInterface(interfaceId));
+        } else {
+            assertFalse(nft.supportsInterface(interfaceId));
+        }
     }
 
     modifier SaleComplete() {
@@ -49,10 +55,11 @@ abstract contract MerkleDiscountNftTest is Test {
         _;
     }
 
-    function test_RoyaltyInfo() public {
-        (address royaltyReceiver, uint256 royaltyAmount) = nft.royaltyInfo(1, 1 ether);
+    function test_RoyaltyInfo(uint256 price) public {
+        vm.assume(price < type(uint112).max);
+        (address royaltyReceiver, uint256 royaltyAmount) = nft.royaltyInfo(1, price);
         assertEq(royaltyReceiver, owner);
-        assertEq(royaltyAmount, 1 ether * 2.5 / 100);
+        assertEq(royaltyAmount, price * 25 / 1000);
     }
 
     function test_PublicMint() public {
@@ -157,5 +164,11 @@ abstract contract MerkleDiscountNftTest is Test {
         nft.withdrawFunds();
         assertEq(address(nft).balance, 0);
         assertEq(owner.balance, 2 ether);
+
+        // fail if owner is a contract and doesn't implement payable or fallback
+        vm.etch(owner,  hex'01');
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(FailedToTransferEther.selector));
+        nft.withdrawFunds();
     }
 }

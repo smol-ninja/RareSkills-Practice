@@ -30,6 +30,7 @@ contract Escrow {
     // @param amount_ amount of erc20 token that buyer deposits
     // @return id which is length of the escrows array for a given seller. id is not unique.
     function enterEscrow(address seller_, IERC20 token_, uint256 amount_) external returns (uint256 id) {
+        require(amount_ > 0, "0 amount");
         token_.safeTransferFrom(msg.sender, address(this), amount_);
 
         TimeLock memory tl;
@@ -57,8 +58,7 @@ contract Escrow {
         require(block.timestamp >= delay, "cant withdraw");
         require(tl.amount > 0, "0 amount");
 
-        // sets amount to 0 to prevent double spends
-        _withdrawables[msg.sender][id_].amount = 0;
+        delete _withdrawables[msg.sender][id_];
 
         tl.token.safeTransfer(msg.sender, tl.amount);
     }
@@ -76,9 +76,8 @@ contract Escrow {
                 delay = tls[ids_[i]].timestamp + THREE_DAYS;
             }
 
-            if (block.timestamp >= delay && tls[ids_[i]].amount > 0) {
-                // sets amount to 0 to prevent double spends
-                _withdrawables[msg.sender][ids_[i]].amount = 0;
+            if (block.timestamp >= delay) {
+                delete _withdrawables[msg.sender][ids_[i]];
                 tls[ids_[i]].token.safeTransfer(msg.sender, tls[ids_[i]].amount);
             }
         }

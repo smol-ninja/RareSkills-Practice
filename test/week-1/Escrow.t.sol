@@ -10,72 +10,77 @@ contract EscrowTest is Test {
     event NewDeposit(address indexed recipient, uint256 id);
 
     Escrow private escrow;
-    address private buyer = address(0x1234);
-    address private seller = address(0x2345);
+    address private buyer = makeAddr("buyer");
+    address private seller = makeAddr("seller");
     ERC20 private testToken = new ERC20("Test Token", "TT");
 
     function setUp() public {
         escrow = new Escrow();
-        deal(address(testToken), buyer, 10_000);
+        deal(address(testToken), buyer, 100e18);
+        vm.prank(buyer);
+        testToken.approve(address(escrow), type(uint256).max);
     }
 
-    function test_EnterEscrow() public {
-        vm.startPrank(buyer);
-        testToken.approve(address(escrow), 1000);
+    function testFuzz_EnterEscrow(uint256 amount) public {
+        vm.assume(amount <= 100e18);
 
-        vm.expectEmit(true, false, false, true);
-        emit NewDeposit(seller, 0);
-        escrow.enterEscrow(seller, testToken, 1000);
+        vm.startPrank(buyer);
+        if (amount == 0) {
+            vm.expectRevert(bytes("0 amount"));
+            escrow.enterEscrow(seller, testToken, amount);
+        } else {
+            vm.expectEmit(true, false, false, true);
+            emit NewDeposit(seller, 0);
+            escrow.enterEscrow(seller, testToken, amount);
+            assertEq(testToken.balanceOf(buyer), 100e18 - amount);
+            assertEq(testToken.balanceOf(address(escrow)), amount);
+        }
         vm.stopPrank();
-
-        assertEq(testToken.balanceOf(buyer), 9000);
-        assertEq(testToken.balanceOf(address(escrow)), 1000);
     }
 
-    modifier hasEscrow() {
-        test_EnterEscrow();
-        _;
+    function testFuzz_SettleForId(uint256 amount, uint32 timePassed) public {
+        vm.assume(timePassed <= 4 days && amount > 0);
+
+        testFuzz_EnterEscrow(amount);
+        vm.warp(block.timestamp + timePassed);
+
+        vm.startPrank(seller);
+        if (timePassed < 3 days) {
+            vm.expectRevert(bytes("cant withdraw"));
+            escrow.settleForId(0);
+        } else {
+            escrow.settleForId(0);
+            assertEq(testToken.balanceOf(seller), amount);
+
+            // revert on retry
+            vm.expectRevert(bytes("0 amount"));
+            escrow.settleForId(0);
+         }
+         vm.stopPrank();
     }
 
-    function test_SettleForId_RevertWhenNotWaited() public hasEscrow {
-        vm.prank(seller);
-        vm.expectRevert(bytes("cant withdraw"));
-        escrow.settleForId(0);
-    }
-
-    modifier givenThreeDays() {
-        vm.warp(block.timestamp + 3 days);
-        _;
-    }
-
-    function test_SettleForId() public hasEscrow givenThreeDays {
-        vm.prank(seller);
-        escrow.settleForId(0);
-
-        assertEq(testToken.balanceOf(seller), 1000);
-        assertEq(testToken.balanceOf(buyer), 9000);
-    }
-
-    function test_SettleForAllIds() public {
-        vm.startPrank(buyer);
-        testToken.approve(address(escrow), 10_000);
-
+    function testFuzz_SettleForAllIds(uint32 timePassed, uint256 amount) public {
+        vm.assume(timePassed <= 4 days && amount > 0 && amount <= 10e18);
         uint256[] memory ids = new uint[](3);
+
+        vm.startPrank(buyer);
         for (uint256 i; i < 3; ++i) {
             vm.expectEmit(true, false, false, true);
             emit NewDeposit(seller, i);
-            escrow.enterEscrow(seller, testToken, 1000 * (i + 1));
+            escrow.enterEscrow(seller, testToken, amount * (i + 1));
 
             ids[i] = i;
         }
-
         vm.stopPrank();
 
-        vm.warp(block.timestamp + 3 days);
+        vm.warp(block.timestamp + timePassed);
         vm.prank(seller);
         escrow.settleForIds(ids);
 
-        assertEq(testToken.balanceOf(seller), 6000);
-        assertEq(testToken.balanceOf(buyer), 4000);
+        if (timePassed < 3 days) {
+            assertEq(testToken.balanceOf(seller), 0);
+        } else {
+            assertEq(testToken.balanceOf(seller), 6 * amount);
+        }
     }
 }

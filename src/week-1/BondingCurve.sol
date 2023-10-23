@@ -41,7 +41,7 @@ contract TokenSaleManager {
 
     IERC1820Registry internal constant _ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
 
-    BojackToken private immutable _token;
+    BojackToken public immutable token;
 
     // @notice RATIO = supply / price
     uint256 private constant RATIO = 100;
@@ -49,14 +49,10 @@ contract TokenSaleManager {
     uint256 private _currentPrice;
 
     constructor() {
-        _token = new BojackToken("Bojack", "BOJ");
+        token = new BojackToken("Bojack", "BOJ");
 
         // register interface for ERC777TokensRecipient
         _ERC1820_REGISTRY.setInterfaceImplementer(address(this), keccak256("ERC777TokensRecipient"), address(this));
-    }
-
-    function getTokenAddress() external view returns (address tokenAddress) {
-        tokenAddress = address(_token);
     }
 
     // @return the current price of the token from the Bonding curve
@@ -88,7 +84,7 @@ contract TokenSaleManager {
         _currentPrice = newPrice;
 
         // mint and send BOJ tokens to buyer address
-        _token.mint(sender, transferAmount);
+        token.mint(sender, transferAmount);
     }
 
     // @return the average price of BOJ token that user would receive
@@ -151,7 +147,7 @@ contract TokenSaleManager {
         uint256 tokensOutValue = amount * Math.average(newPrice, curPrice) / 1e18;
 
         _currentPrice = newPrice;
-        _token.burn(msg.sender, amount);
+        token.burn(msg.sender, amount);
 
         IERC20(tokenToWithdraw).safeTransfer(msg.sender, tokensOutValue);
     }
