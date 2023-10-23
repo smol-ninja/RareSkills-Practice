@@ -4,6 +4,8 @@ pragma solidity 0.8.19;
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract GodMode is ERC20 {
+    error Unauthorized();
+
     address private immutable _god;
 
     // @param god_ the special address that can move token between two any addresses
@@ -12,7 +14,7 @@ contract GodMode is ERC20 {
     }
 
     modifier onlyGod() {
-        require(msg.sender == _god, "only God");
+        if (msg.sender != _god) revert Unauthorized();
         _;
     }
 

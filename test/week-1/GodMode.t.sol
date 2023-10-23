@@ -6,6 +6,8 @@ import { Test } from "forge-std/Test.sol";
 import { GodMode } from "../../src/week-1/GodMode.sol";
 
 contract GodModeTest is Test {
+    error Unauthorized();
+
     GodMode private token;
     address private constant GOD_ADDRESS = address(0x1720);
     address private user = address(0x1234);
@@ -16,7 +18,7 @@ contract GodModeTest is Test {
     }
 
     function test_RevertWhen_notGod() public {
-        vm.expectRevert(bytes("only God"));
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         token.transferByGod(user, address(0xDead), 100);
     }
 

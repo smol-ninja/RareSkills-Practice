@@ -9,6 +9,9 @@ import { Escrow } from "../../src/week-1/Escrow.sol";
 contract EscrowTest is Test {
     event NewDeposit(address indexed recipient, uint256 id);
 
+    error BeforeDelay();
+    error ZeroAmount();
+
     Escrow private escrow;
     address private buyer = makeAddr("buyer");
     address private seller = makeAddr("seller");
@@ -26,7 +29,7 @@ contract EscrowTest is Test {
 
         vm.startPrank(buyer);
         if (amount == 0) {
-            vm.expectRevert(bytes("0 amount"));
+            vm.expectRevert(abi.encodeWithSelector(ZeroAmount.selector));
             escrow.enterEscrow(seller, testToken, amount);
         } else {
             vm.expectEmit(true, false, false, true);
@@ -46,17 +49,17 @@ contract EscrowTest is Test {
 
         vm.startPrank(seller);
         if (timePassed < 3 days) {
-            vm.expectRevert(bytes("cant withdraw"));
+            vm.expectRevert(abi.encodeWithSelector(BeforeDelay.selector));
             escrow.settleForId(0);
         } else {
             escrow.settleForId(0);
             assertEq(testToken.balanceOf(seller), amount);
 
             // revert on retry
-            vm.expectRevert(bytes("0 amount"));
+            vm.expectRevert(abi.encodeWithSelector(ZeroAmount.selector));
             escrow.settleForId(0);
-         }
-         vm.stopPrank();
+        }
+        vm.stopPrank();
     }
 
     function testFuzz_SettleForAllIds(uint32 timePassed, uint256 amount) public {

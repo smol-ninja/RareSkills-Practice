@@ -9,6 +9,9 @@ contract Escrow {
 
     event NewDeposit(address indexed recipient, uint256 id);
 
+    error BeforeDelay();
+    error ZeroAmount();
+
     // @param token erc20 that buyer deposits
     // @param amount of erc20 that buyer deposits
     // @timestamp when buyer deposits. Requires to keep track of cool down period for seller
@@ -30,7 +33,7 @@ contract Escrow {
     // @param amount_ amount of erc20 token that buyer deposits
     // @return id which is length of the escrows array for a given seller. id is not unique.
     function enterEscrow(address seller_, IERC20 token_, uint256 amount_) external returns (uint256 id) {
-        require(amount_ > 0, "0 amount");
+        if (amount_ == 0) revert ZeroAmount();
         token_.safeTransferFrom(msg.sender, address(this), amount_);
 
         TimeLock memory tl;
@@ -55,8 +58,8 @@ contract Escrow {
             delay = tl.timestamp + THREE_DAYS;
         }
 
-        require(block.timestamp >= delay, "cant withdraw");
-        require(tl.amount > 0, "0 amount");
+        if (block.timestamp < delay) revert BeforeDelay();
+        if (tl.amount == 0) revert ZeroAmount();
 
         delete _withdrawables[msg.sender][id_];
 

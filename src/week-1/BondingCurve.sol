@@ -11,6 +11,8 @@ import { IERC1363Spender } from "@openzeppelin/contracts/interfaces/IERC1363Spen
 
 // @notice BojackToken implements ERC20 and adds control over mint and burn by owner
 contract BojackToken is ERC20 {
+    error Unauthorized();
+
     address private _saleManager;
 
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
@@ -18,7 +20,7 @@ contract BojackToken is ERC20 {
     }
 
     modifier onlySaleManager() {
-        require(_msgSender() == _saleManager, "Unauthorized");
+        if (_msgSender() != _saleManager) revert Unauthorized();
         _;
     }
 

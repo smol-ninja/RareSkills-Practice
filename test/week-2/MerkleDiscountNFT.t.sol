@@ -166,7 +166,7 @@ abstract contract MerkleDiscountNftTest is Test {
         assertEq(owner.balance, 2 ether);
 
         // fail if owner is a contract and doesn't implement payable or fallback
-        vm.etch(owner,  hex'01');
+        vm.etch(owner, hex"01");
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(FailedToTransferEther.selector));
         nft.withdrawFunds();
