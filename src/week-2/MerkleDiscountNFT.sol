@@ -30,7 +30,7 @@ contract MerkleDiscountNFT is Ownable2Step, ERC721, ERC2981 {
     /**
      * @param merkleRoot_ root node of merkle tree containing addresses eligible for discount
      */
-    constructor(bytes32 merkleRoot_) ERC721("MerkleDiscountNFT", "MDNFT") Ownable2Step() {
+    constructor(bytes32 merkleRoot_) ERC721("MerkleDiscountNFT", "MDNFT") {
         _setDefaultRoyalty(owner(), uint96(_DEFAULT_ROYALTY));
         merkleRoot = merkleRoot_;
     }

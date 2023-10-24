@@ -138,6 +138,8 @@ contract PairTest is Test {
     }
 
     function test_Mint() public GivenPoolInitiated {
+        uint256 prevCumPrice0 = pair.price0CumulativeLast();
+        uint256 prevCumPrice1 = pair.price1CumulativeLast();
         (uint256 r00, uint256 r10,) = pair.getReserves();
         uint256 supply0 = pair.totalSupply();
 
@@ -168,6 +170,8 @@ contract PairTest is Test {
         token1.transfer(address(pair), 1e18);
         vm.stopPrank();
 
+        // increase timestamp to check for cumulative prices
+        vm.warp(block.timestamp + 1 days);
         liquidity = pair.mint(user);
 
         (r01, r11,) = pair.getReserves();
@@ -181,6 +185,12 @@ contract PairTest is Test {
         assertGe(token0.balanceOf(address(pair)), r01);
         assertGe(token1.balanceOf(address(pair)), r11);
         assertEq(pair.kLast(), r01 * r11);
+
+        // check if cumulative prices are updated correctly
+        uint256 lastCumPrice0 = pair.price0CumulativeLast();
+        uint256 lastCumPrice1 = pair.price1CumulativeLast();
+        assertTrue(lastCumPrice0 > prevCumPrice0);
+        assertTrue(lastCumPrice1 > prevCumPrice1);
     }
 
     function test_Mint_WhenSmallDeposits() public GivenPoolInitiated {
@@ -221,6 +231,9 @@ contract PairTest is Test {
     function testFuzz_Burn(uint256 burnQuantity) public GivenPoolInitiated GivenUserAddedLiquidity {
         vm.assume(burnQuantity <= pair.balanceOf(user));
 
+        uint256 prevCumPrice0 = pair.price0CumulativeLast();
+        uint256 prevCumPrice1 = pair.price1CumulativeLast();
+
         vm.prank(user);
         pair.transfer(address(pair), burnQuantity);
 
@@ -229,6 +242,8 @@ contract PairTest is Test {
         uint256 userBalance0 = token0.balanceOf(user);
         uint256 userBalance1 = token1.balanceOf(user);
 
+        // increase timestamp to check for cumulative prices
+        vm.warp(block.timestamp + 1 days);
         (uint256 amount0, uint256 amount1) = pair.burn(user);
         (uint256 r01, uint256 r11,) = pair.getReserves();
         uint256 totalSupply1 = pair.totalSupply();
@@ -244,6 +259,12 @@ contract PairTest is Test {
         assertEq(token0.balanceOf(user), userBalance0 + amount0);
         assertEq(token1.balanceOf(user), userBalance1 + amount1);
         assertEq(pair.kLast(), r01 * r11);
+
+        // check if cumulative prices are updated correctly
+        uint256 lastCumPrice0 = pair.price0CumulativeLast();
+        uint256 lastCumPrice1 = pair.price1CumulativeLast();
+        assertTrue(lastCumPrice0 > prevCumPrice0);
+        assertTrue(lastCumPrice1 > prevCumPrice1);
     }
 
     function test_BurnAll() public GivenPoolInitiated {
@@ -259,8 +280,13 @@ contract PairTest is Test {
         assertEq(amount1, (21_000e18 * aliceLiquidity) / totalSupply);
     }
 
-    function testFuzz_Skim(uint256 amount0, uint256 amount1) public {
-        vm.assume(amount0 > type(uint112).max && amount1 > type(uint112).max);
+    function testFuzz_Skim(uint256 amount0, uint256 amount1) public GivenPoolInitiated {
+        (uint256 r0, uint256 r1,) = pair.getReserves();
+
+        vm.assume(
+            amount0 > type(uint112).max && amount1 > type(uint112).max && amount0 < type(uint256).max - r0
+                && amount1 < type(uint256).max - r1
+        );
         deal(address(token0), user, amount0);
         deal(address(token1), user, amount1);
 
@@ -269,12 +295,10 @@ contract PairTest is Test {
         token1.transfer(address(pair), amount1);
         vm.stopPrank();
 
-        (uint256 r0, uint256 r1,) = pair.getReserves();
-
         vm.expectEmit();
-        emit Transfer(address(pair), user, amount0 - r0);
+        emit Transfer(address(pair), user, amount0);
         vm.expectEmit();
-        emit Transfer(address(pair), user, amount1 - r1);
+        emit Transfer(address(pair), user, amount1);
         pair.skim(user);
     }
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import { StakingContract } from "../../src/week-2/StakingContract.sol";
+import { StakingContract, RewardToken } from "../../src/week-2/StakingContract.sol";
 import { MerkleDiscountNFT } from "../../src/week-2/MerkleDiscountNFT.sol";
 import { MerkleDiscountNftTest } from "./MerkleDiscountNFT.t.sol";
 
@@ -16,10 +16,17 @@ contract StakingContractTest is MerkleDiscountNftTest {
 
     error NoTokenRecordFound();
     error UnknownNFTFound();
+    error Unauthorized();
 
     function setUp() public override {
         super.setUp();
         stakingContract = new StakingContract(nft);
+    }
+
+    function test_ReverWhen_UnathorizedMint() public {
+        RewardToken rewardToken = stakingContract.rewardToken();
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        rewardToken.mint(address(this), 1);
     }
 
     function test_Stake() public SaleComplete {

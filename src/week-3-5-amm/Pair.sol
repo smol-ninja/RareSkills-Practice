@@ -58,7 +58,7 @@ contract Pair is PairERC20 {
     uint112 private _reserve1;
     uint32 private _blockTimestampLast;
 
-    constructor(address token0_, address token1_) PairERC20() {
+    constructor(address token0_, address token1_) {
         token0 = token0_;
         token1 = token1_;
         factory = msg.sender;
@@ -154,7 +154,7 @@ contract Pair is PairERC20 {
         if (liquiditySupply == 0) {
             // when adding liquidity for the first time: liquidity = sqrt(deposit0 * deposit1)
             liquidity = Math.sqrt(deposit0 * deposit1);
-            if (liquidity <= MINIMUM_LIQUIDITY) revert MinimumLiquidity();
+            if (liquidity < MINIMUM_LIQUIDITY) revert MinimumLiquidity();
             // mint to address(1) since minting to address(0) required overriding mint function
             _mint(address(1), MINIMUM_LIQUIDITY);
 
@@ -167,15 +167,16 @@ contract Pair is PairERC20 {
             UD60x18 ratio1 = ud(deposit1).div(ud(r1));
 
             // cannot overflow since liquidity is bound to uint256
-            if (ratio0 <= ratio1) {
+            if (ratio0 < ratio1) {
                 liquidity = (deposit0 * liquiditySupply) / r0;
                 deposit1 = (r1 * deposit0) / r0;
             } else {
                 liquidity = (deposit1 * liquiditySupply) / r1;
                 deposit0 = (r0 * deposit1) / r1;
             }
-            if (liquidity == 0) revert InsufficientLiquidity();
         }
+
+        if (liquidity == 0) revert InsufficientLiquidity();
 
         unchecked {
             // update reserves. cant overflow
@@ -239,9 +240,9 @@ contract Pair is PairERC20 {
      */
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata) external {
         if (amount0Out == 0 && amount1Out == 0) revert ZeroOutput();
-        if (amount0Out > _reserve0 || amount1Out > _reserve1) revert InsufficientReserve();
-
         (uint112 r0, uint112 r1) = (_reserve0, _reserve1); // copy into memory
+        if (amount0Out >= r0 || amount1Out >= r1) revert InsufficientReserve();
+
         // check for balances
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));

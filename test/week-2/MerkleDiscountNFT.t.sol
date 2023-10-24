@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import { Test } from "forge-std/Test.sol";
 import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { MerkleDiscountNFT } from "../../src/week-2/MerkleDiscountNFT.sol";
 
@@ -39,8 +40,8 @@ abstract contract MerkleDiscountNftTest is Test {
         nft = new MerkleDiscountNFT(0x7ac231947135471a6af7f1b944c422bac53b5eee7759b82171feadff411a423f);
     }
 
-    function test_supportsInterface(bytes4 interfaceId) public {
-        if (interfaceId == type(IERC2981).interfaceId) {
+    function test_SupportsInterface(bytes4 interfaceId) public {
+        if (interfaceId == type(IERC2981).interfaceId || interfaceId == type(IERC165).interfaceId) {
             assertTrue(nft.supportsInterface(interfaceId));
         } else {
             assertFalse(nft.supportsInterface(interfaceId));
@@ -170,5 +171,9 @@ abstract contract MerkleDiscountNftTest is Test {
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(FailedToTransferEther.selector));
         nft.withdrawFunds();
+    }
+
+    function test_Owner() public {
+        assertEq(nft.owner(), owner);
     }
 }

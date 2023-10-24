@@ -212,4 +212,9 @@ contract TokenSaleManagerTest is Test {
         vm.prank(address(manager));
         bojackToken.transferManager(makeAddr("newManager"));
     }
+
+    function test_RevertWhenUnauthorized_Mint() public {
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        bojackToken.mint(address(this), 1);
+    }
 }
