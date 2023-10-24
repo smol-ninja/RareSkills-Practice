@@ -5,14 +5,14 @@ import { UD60x18, ud } from "@prb/math/UD60x18.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
+import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 
 import { PairERC20 } from "./PairERC20.sol";
 
 /**
  * @dev it uses UD60x18 library for fixed point arithmetic. It has 60 integers and 18 decimal points.
  */
-contract Pair is PairERC20 {
+contract Pair is PairERC20, IERC3156FlashLender {
     using SafeERC20 for IERC20;
 
     // events
@@ -29,6 +29,7 @@ contract Pair is PairERC20 {
     );
 
     // errors
+    error ZeroAddress();
     error UnsupportedToken();
     error FlashLoanFailed();
     error Overflow();
@@ -59,6 +60,7 @@ contract Pair is PairERC20 {
     uint32 private _blockTimestampLast;
 
     constructor(address token0_, address token1_) {
+        if (token0_ == address(0) || token1_ == address(0)) revert ZeroAddress();
         token0 = token0_;
         token1 = token1_;
         factory = msg.sender;
@@ -77,7 +79,7 @@ contract Pair is PairERC20 {
      * @param token address of token to borrow
      * @return amount maximum that user can borrow
      */
-    function maxFlashLoan(address token) public view returns (uint256 amount) {
+    function maxFlashLoan(address token) public view override returns (uint256 amount) {
         if (token != token0 && token != token1) revert UnsupportedToken();
         amount = token == token0 ? _reserve0 : _reserve1;
     }
@@ -87,7 +89,7 @@ contract Pair is PairERC20 {
      * @param amount amount of the token to borrow
      * @return fee for flashloan
      */
-    function flashFee(address token, uint256 amount) public view returns (uint256 fee) {
+    function flashFee(address token, uint256 amount) public view override returns (uint256 fee) {
         if (token != token0 && token != token1) revert UnsupportedToken();
         fee = (amount * FEE_BPS) / 10_000;
     }
@@ -102,6 +104,7 @@ contract Pair is PairERC20 {
         bytes calldata data
     )
         public
+        override
         returns (bool)
     {
         address token0_ = token0; // copy into memory

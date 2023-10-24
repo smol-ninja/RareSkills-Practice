@@ -1,4 +1,4 @@
-## List of all Lived mutations
+## vertigo-rs: Lived mutations
 
 **BondingCurve.sol**
 
@@ -22,7 +22,7 @@ if (block.timestamp < delay) revert BeforeDelay();
 if (block.timestamp <= delay) revert BeforeDelay();
 ```
 
-_Resolution_:: It can't fuzz inputs. This is a <span style="color:green">false positive</span>.
+_Resolution_:: It can't fuzz inputs. This is a _false positive_.
 
 **MerkleDiscountNFT.sol**
 
@@ -120,4 +120,4 @@ if (uint256(_reserve0) * uint256(_reserve1) < uint256(r0) * uint256(r1)) revert 
 if (uint256(_reserve0) * uint256(_reserve1) <= uint256(r0) * uint256(r1)) revert XYK();
 ```
 
-_Resolution_:: Seems like a <span style="color:green">False positive</span>.
+_Resolution_:: Seems like a _false positive_.

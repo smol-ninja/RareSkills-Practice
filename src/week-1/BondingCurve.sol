@@ -12,6 +12,7 @@ import { IERC1363Spender } from "@openzeppelin/contracts/interfaces/IERC1363Spen
 // @notice BojackToken implements ERC20 and adds control over mint and burn by owner
 contract BojackToken is ERC20 {
     error Unauthorized();
+    error ZeroAddress();
 
     address private _saleManager;
 
@@ -33,11 +34,12 @@ contract BojackToken is ERC20 {
     }
 
     function transferManager(address newManager) public onlySaleManager {
+        if (newManager == address(0)) revert ZeroAddress();
         _saleManager = newManager;
     }
 }
 
-contract TokenSaleManager {
+contract TokenSaleManager is IERC1363Receiver, IERC1363Spender {
     using SafeERC20 for BojackToken;
     using SafeERC20 for IERC20;
 
@@ -119,6 +121,7 @@ contract TokenSaleManager {
         bytes calldata
     )
         external
+        override
         returns (bytes4 _selector)
     {
         _buy(from, amount);
@@ -128,7 +131,15 @@ contract TokenSaleManager {
 
     // @notice IERC1363Receiver interface to support approveAndCall
     // @dev msg.sender is always token address.
-    function onApprovalReceived(address owner, uint256 amount, bytes calldata) external returns (bytes4 _selector) {
+    function onApprovalReceived(
+        address owner,
+        uint256 amount,
+        bytes calldata
+    )
+        external
+        override
+        returns (bytes4 _selector)
+    {
         IERC20(msg.sender).safeTransferFrom(owner, address(this), amount);
         _buy(owner, amount);
 

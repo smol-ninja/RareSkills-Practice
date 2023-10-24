@@ -10,6 +10,8 @@ import { Pair } from "../../src/week-3-5-amm/Pair.sol";
 contract FactoryTest is Test {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
 
+    error ZeroAddress();
+
     Factory private factory = new Factory();
     ERC20 private dai = new ERC20("DAI Token", "DAI");
     ERC20 private mkr = new ERC20("Maker Token", "MKR");
@@ -41,18 +43,24 @@ contract FactoryTest is Test {
             (t1, t2) = (token1, token0);
         }
 
-        // test if pair is created successfully
-        vm.expectEmit(true, true, false, true);
-        emit PairCreated(address(t1), address(t2), _computeAddress(address(token0), address(token1)), 1);
-        factory.createPair(address(token0), address(token1));
+        // fail if any token is a zero address
+        if (address(token0) == address(0) || address(token1) == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+            factory.createPair(address(token0), address(token1));
+        } else {
+            // test if pair is created successfully
+            vm.expectEmit(true, true, false, true);
+            emit PairCreated(address(t1), address(t2), _computeAddress(address(token0), address(token1)), 1);
+            factory.createPair(address(token0), address(token1));
 
-        // fail if the user tries to create the same pair again
-        vm.expectRevert();
-        factory.createPair(address(token0), address(token1));
+            // fail if the user tries to create the same pair again
+            vm.expectRevert();
+            factory.createPair(address(token0), address(token1));
 
-        // // dail if pair user tries to create the same pair again but in reverse order
-        vm.expectRevert();
-        factory.createPair(address(token1), address(token0));
+            // // fail if pair user tries to create the same pair again but in reverse order
+            vm.expectRevert();
+            factory.createPair(address(token1), address(token0));
+        }
     }
 
     modifier create1000Pairs() {

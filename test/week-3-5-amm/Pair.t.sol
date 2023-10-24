@@ -19,6 +19,7 @@ contract PairTest is Test {
     event Burn(address indexed sender, uint256 amount0, uint256 amount1, address indexed to);
     event Sync(uint112 reserve0, uint112 reserve1);
 
+    error ZeroAddress();
     error UnsupportedToken();
     error FlashLoanFailed();
     error Overflow();
@@ -49,6 +50,13 @@ contract PairTest is Test {
         token0.approve(address(pair), type(uint256).max);
         token1.approve(address(pair), type(uint256).max);
         vm.stopPrank();
+    }
+
+    function test_RevertWhen_ZeroTokenAddress() public {
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+        factory.createPair(address(token0), address(0));
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+        factory.createPair(address(0), address(token1));
     }
 
     function test_InitialStates() public {

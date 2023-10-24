@@ -7,6 +7,7 @@ import { GodMode } from "../../src/week-1/GodMode.sol";
 
 contract GodModeTest is Test {
     error Unauthorized();
+    error ZeroAddress();
 
     GodMode private token;
     address private constant GOD_ADDRESS = address(0x1720);
@@ -15,6 +16,11 @@ contract GodModeTest is Test {
     function setUp() public {
         token = new GodMode(GOD_ADDRESS);
         deal(address(token), user, 100);
+    }
+
+    function test_RevertWhen_zeroAddress() public {
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+        new GodMode(address(0));
     }
 
     function test_RevertWhen_notGod() public {

@@ -5,11 +5,13 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract GodMode is ERC20 {
     error Unauthorized();
+    error ZeroAddress();
 
     address private immutable _god;
 
     // @param god_ the special address that can move token between two any addresses
     constructor(address god_) ERC20("Token with God mode", "GODT") {
+        if (god_ == address(0)) revert ZeroAddress();
         _god = god_;
     }
 

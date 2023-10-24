@@ -14,6 +14,7 @@ contract TokenSaleManagerTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     error Unauthorized();
+    error ZeroAddress();
 
     // solhint-disable-next-line max-line-length
     bytes private erc1820DeployedCode =
@@ -204,9 +205,14 @@ contract TokenSaleManagerTest is Test {
     }
 
     function test_TransferManager() public {
-        // fail is msg.sendeer is not manager
+        // fail if msg.sendeer is not manager
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         bojackToken.transferManager(makeAddr("newManager"));
+
+        // fail if new address is 0 address
+        vm.prank(address(manager));
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+        bojackToken.transferManager(address(0));
 
         // success
         vm.prank(address(manager));
