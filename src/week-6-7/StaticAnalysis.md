@@ -121,4 +121,6 @@ Sync(r0,r1)
 
 ## MythX
 
-No support for foundry yet.
+Couldn't make it work since MythX is paid and Mythril does not support parent constructor.
+
+**Escrow.sol** No issues were detected.
